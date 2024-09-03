@@ -1,0 +1,138 @@
+# import libraries (you may add additional imports but you may not have to)
+import numpy as np
+import pandas as pd
+from scipy.sparse import csr_matrix
+from sklearn.neighbors import NearestNeighbors
+import matplotlib.pyplot as plt
+!pip install --upgrade pandas
+
+
+# get data files
+!wget https://cdn.freecodecamp.org/project-data/books/book-crossings.zip
+
+!unzip book-crossings.zip
+
+books_filename = 'BX-Books.csv'
+ratings_filename = 'BX-Book-Ratings.csv'
+
+# import csv data into dataframes
+df_books = pd.read_csv(
+    books_filename,
+    encoding = "ISO-8859-1",
+    sep=";",
+    header=0,
+    names=['isbn', 'title', 'author'],
+    usecols=['isbn', 'title', 'author'],
+    dtype={'isbn': 'str', 'title': 'str', 'author': 'str'})
+
+df_ratings = pd.read_csv(
+    ratings_filename,
+    encoding = "ISO-8859-1",
+    sep=";",
+    header=0,
+    names=['user', 'isbn', 'rating'],
+    usecols=['user', 'isbn', 'rating'],
+    dtype={'user': 'int32', 'isbn': 'str', 'rating': 'float32'})
+
+# Importando bibliotecas necessárias
+import pandas as pd
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from scipy.sparse import csr_matrix
+
+# Carregando os dados
+# Substitua os caminhos pelos locais corretos onde seus dados estão armazenados
+books = pd.read_csv('BX-Books.csv', sep=';', on_bad_lines='skip', encoding="latin-1") # Changed 'error_bad_lines' to 'on_bad_lines' and set to 'skip' to handle bad lines
+ratings = pd.read_csv('BX-Book-Ratings.csv', sep=';', on_bad_lines='skip', encoding="latin-1") # Changed 'error_bad_lines' to 'on_bad_lines' and set to 'skip' to handle bad lines
+users = pd.read_csv('BX-Users.csv', sep=';', on_bad_lines='skip', encoding="latin-1") # Changed 'error_bad_lines' to 'on_bad_lines' and set to 'skip' to handle bad lines
+
+# Limpeza dos dados
+# Filtrando usuários com mais de 200 avaliações
+user_counts = ratings['User-ID'].value_counts()
+ratings = ratings[ratings['User-ID'].isin(user_counts[user_counts >= 200].index)]
+
+# Filtrando livros com mais de 100 avaliações
+book_counts = ratings['ISBN'].value_counts()
+ratings = ratings[ratings['ISBN'].isin(book_counts[book_counts >= 100].index)]
+
+# Criando uma matriz esparsa de usuários x livros
+book_user_matrix = ratings.pivot(index='ISBN', columns='User-ID', values='Book-Rating').fillna(0)
+book_user_matrix_sparse = csr_matrix(book_user_matrix.values)
+
+# Treinando o modelo NearestNeighbors
+model = NearestNeighbors(metric='cosine', algorithm='brute')
+model.fit(book_user_matrix_sparse)
+
+# Função para buscar recomendações
+def get_recommends(book_title):
+    # Obtendo o índice do livro no dataframe original
+    try:
+        idx = books[books['Book-Title'] == book_title].index[0]
+        # Obtendo as distâncias e índices dos vizinhos mais próximos
+        distances, indices = model.kneighbors(book_user_matrix.iloc[idx, :].values.reshape(1, -1), n_neighbors=6)
+
+        # Criando a lista de recomendações
+        similar_books = []
+        for i in range(1, len(distances.flatten())):
+            similar_books.append([books.iloc[indices.flatten()[i]]['Book-Title'], distances.flatten()[i]])
+
+        return [book_title, similar_books]
+    except IndexError:
+        print(f"Book '{book_title}' not found or has insufficient ratings.")
+        return []
+# Testando a função com um exemplo
+print(get_recommends("The Queen of the Damned (Vampire Chronicles)"))
+
+# function to return recommended books - this will be tested
+def get_recommends(book = ""):
+
+
+  return recommended_books
+
+# function to return recommended books - this will be tested
+def get_recommends(book = ""):
+
+  # add your code here - you can use the code from ipython-input-10-ba05427b1c51
+  # Importando bibliotecas necessárias
+  import pandas as pd
+  import numpy as np
+  from sklearn.neighbors import NearestNeighbors
+  from scipy.sparse import csr_matrix
+
+  # Carregando os dados
+  # Substitua os caminhos pelos locais corretos onde seus dados estão armazenados
+  books = pd.read_csv('BX-Books.csv', sep=';', error_bad_lines=False, encoding="latin-1")
+  ratings = pd.read_csv('BX-Book-Ratings.csv', sep=';', error_bad_lines=False, encoding="latin-1")
+  users = pd.read_csv('BX-Users.csv', sep=';', error_bad_lines=False, encoding="latin-1")
+
+  # Limpeza dos dados
+  # Filtrando usuários com mais de 200 avaliações
+  user_counts = ratings['User-ID'].value_counts()
+  ratings = ratings[ratings['User-ID'].isin(user_counts[user_counts >= 200].index)]
+
+  # Filtrando livros com mais de 100 avaliações
+  book_counts = ratings['ISBN'].value_counts()
+  ratings = ratings[ratings['ISBN'].isin(book_counts[book_counts >= 100].index)]
+
+  # Criando uma matriz esparsa de usuários x livros
+  book_user_matrix = ratings.pivot(index='ISBN', columns='User-ID', values='Book-Rating').fillna(0)
+  book_user_matrix_sparse = csr_matrix(book_user_matrix.values)
+
+  # Treinando o modelo NearestNeighbors
+  model = NearestNeighbors(metric='cosine', algorithm='brute')
+  model.fit(book_user_matrix_sparse)
+
+  # Função para buscar recomendações
+  #def get_recommends(book_title):
+  # Obtendo o índice do livro no dataframe original
+  idx = books[books['Book-Title'] == book].index[0]
+
+  # Obtendo as distâncias e índices dos vizinhos mais próximos
+  distances, indices = model.kneighbors(book_user_matrix.iloc[idx, :].values.reshape(1, -1), n_neighbors=6)
+
+  # Criando a lista de recomendações
+  similar_books = []
+  for i in range(1, len(distances.flatten())):
+    similar_books.append([books.iloc[indices.flatten()[i]]['Book-Title'], distances.flatten()[i]])
+  recommended_books = [book, similar_books]
+  return recommended_books
